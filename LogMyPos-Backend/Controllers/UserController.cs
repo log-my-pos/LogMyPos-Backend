@@ -6,9 +6,14 @@ namespace LogMyPos_Backend.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 public class UserController : ControllerBase {
-	[HttpGet("{id:int}")]
-	public ActionResult<User> GetUser(int id) {
-		return Ok(new User(id, "placeholder"));
+	[HttpGet("{id:guid}")]
+	public ActionResult<User> GetUser(Guid id) {
+		return Ok(new User {
+			Id = id,
+			Username = "Placeholder",
+			Email = "Placeholder",
+			HashedPassword = "Placeholder"
+		});
 	}
 
 	[HttpPost]
