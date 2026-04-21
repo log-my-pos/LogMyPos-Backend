@@ -1,6 +1,17 @@
 @LogMyPos_Backend_HostAddress = http://localhost:5180
 
-GET {{LogMyPos_Backend_HostAddress}}/weatherforecast/
+GET {{LogMyPos_Backend_HostAddress}}/api/user/1
 Accept: application/json
 
 ###
+
+POST {{LogMyPos_Backend_HostAddress}}/api/user
+Content-Type: application/json
+
+{
+  "id": 1,
+  "name": "test"
+}
+
+###
+
