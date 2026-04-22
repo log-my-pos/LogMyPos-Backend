@@ -3,4 +3,5 @@
 public sealed class CreateProfileRequest {
 	public required Guid UserId { get; set; }
 	public required string DisplayName { get; set; }
+	public IFormFile? ProfileImage { get; set; }
 }

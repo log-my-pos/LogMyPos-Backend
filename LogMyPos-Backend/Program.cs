@@ -1,7 +1,12 @@
 using LogMyPos_Backend.DbContext;
 using Microsoft.EntityFrameworkCore;
 
-var builder = WebApplication.CreateBuilder(args);
+var options = new WebApplicationOptions {
+	Args = args,
+	WebRootPath = "wwwroot"
+};
+
+var builder = WebApplication.CreateBuilder(options);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -22,6 +27,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.MapControllers();
 
 app.Run();
