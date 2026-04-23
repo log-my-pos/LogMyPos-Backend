@@ -1,6 +1,7 @@
 ﻿using LogMyPos_Backend.DbContext;
 using LogMyPos_Backend.Model;
 using LogMyPos_Backend.Model.Dto.Profile;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +9,7 @@ namespace LogMyPos_Backend.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class ProfileController(AppDbContext dbContext, IWebHostEnvironment environment) : ControllerBase {
 	private const long MaxProfileImageSizeInBytes = 5 * 1024 * 1024;
 	private static readonly HashSet<string> AllowedImageContentTypes = ["image/jpeg", "image/png", "image/webp"];

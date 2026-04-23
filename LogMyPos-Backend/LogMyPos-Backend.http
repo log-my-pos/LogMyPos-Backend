@@ -1,17 +1,15 @@
 @LogMyPos_Backend_HostAddress = http://localhost:5180
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4ODQxMDAwNC00ZTRkLTQ5YTEtODNjNS0wNDM3Yzc3MzZhNmYiLCJ1bmlxdWVfbmFtZSI6Ik9saXZlciIsImVtYWlsIjoiT2xpdmVyLmguZnJvYmVyZ0BnbWFpbC5jb20iLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijg4NDEwMDA0LTRlNGQtNDlhMS04M2M1LTA0MzdjNzczNmE2ZiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJPbGl2ZXIiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJPbGl2ZXIuaC5mcm9iZXJnQGdtYWlsLmNvbSIsImV4cCI6MTc3Njk2MTUwMywiaXNzIjoiTG9nTXlQb3MtQmFja2VuZCIsImF1ZCI6IkxvZ015UG9zLUJhY2tlbmQifQ.BVakI8e6pHVRd66CVzQZN0CVZCwTCNYWsm3HgNx_Qd0
 
-GET {{LogMyPos_Backend_HostAddress}}/api/user/1
-Accept: application/json
-
-###
-
-POST {{LogMyPos_Backend_HostAddress}}/api/user
+POST {{LogMyPos_Backend_HostAddress}}/api/User/login
 Content-Type: application/json
 
 {
-  "id": 1,
-  "name": "test"
+  "email": "Oliver.h.froberg@gmail.com",
+  "password": "Oliver1703"
 }
 
 ###
 
+GET {{LogMyPos_Backend_HostAddress}}/api/User
+Authorization: Bearer {{token}}
