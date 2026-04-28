@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: LogMyPos-Backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://aws-1-eu-west-2.pooler.supabase.com:5432/postgres?user=postgres.kbkldkpfpccfkxhrxnwq&password=6F6TT7SlfgengRBe}
+    username: ${DB_USERNAME:postgres.kbkldkpfpccfkxhrxnwq}
+    password: ${DB_PASSWORD:6F6TT7SlfgengRBe}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /docs
