@@ -9,7 +9,7 @@ import java.util.Date
 
 @Service
 class JwtService(
-    @Value("\${jwt.secret:your-very-long-and-secure-secret-key-here}")
+    @Value($$"${jwt.secret}")
     private val secret: String,
     @Value("\${jwt.expiration-ms:3600000}")
     private val expirationTime: Long
