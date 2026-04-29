@@ -11,30 +11,31 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
-class SecurityConfig {
+class SecurityConfig(
+	private val jwtAuthenticationFilter: JwtAuthenticationFilter
+) {
 	@Bean
 	fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
 		http
 			.csrf { it.disable() }
-			.authorizeHttpRequests {
-//				it.requestMatchers(
-//					"/api/auth/**",
-//					"/api-docs/**",
-//					"/docs/**",
-//					"/swagger-ui/**",
-//					"/swagger-ui.html",
-//					"/error"
-//				).permitAll()
-//				it.anyRequest().authenticated()
-				it.anyRequest().permitAll()
+			.sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+			.authorizeHttpRequests { auth ->
+				auth.requestMatchers(
+					"/api/auth/**",
+					"/docs/**",
+					"/api-docs/**",
+					"/swagger-ui/**",
+					"/v3/api-docs/**",
+					"/webjars/**",
+				).permitAll()
+					.anyRequest().authenticated()
 			}
-			.formLogin { it.disable() }
-			.httpBasic { it.disable() }
-			.sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) }
+			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
 
 		return http.build()
 	}

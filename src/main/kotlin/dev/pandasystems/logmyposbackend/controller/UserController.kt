@@ -3,6 +3,8 @@ package dev.pandasystems.logmyposbackend.controller
 import dev.pandasystems.logmyposbackend.dto.*
 import dev.pandasystems.logmyposbackend.model.User
 import dev.pandasystems.logmyposbackend.repositories.UserRepository
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType
+import io.swagger.v3.oas.annotations.security.SecurityScheme
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -16,7 +18,6 @@ import kotlin.collections.map
 
 @RestController
 @RequestMapping("/api/users")
-@PreAuthorize("isAuthenticated()")
 class UserController(
 	private val userRepository: UserRepository,
 	private val passwordEncoder: PasswordEncoder

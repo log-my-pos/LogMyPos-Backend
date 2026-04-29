@@ -8,6 +8,8 @@ import dev.pandasystems.logmyposbackend.model.Profile
 import dev.pandasystems.logmyposbackend.model.User
 import dev.pandasystems.logmyposbackend.repositories.ProfileRepository
 import dev.pandasystems.logmyposbackend.repositories.UserRepository
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType
+import io.swagger.v3.oas.annotations.security.SecurityScheme
 import jakarta.websocket.server.PathParam
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -28,7 +30,6 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/api/profiles")
-@PreAuthorize("isAuthenticated()")
 class ProfileController(
 	val profileRepository: ProfileRepository,
 	val userController: UserController
