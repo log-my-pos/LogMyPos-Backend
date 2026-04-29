@@ -11,22 +11,16 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 @Entity
-@Table(name = "users")
-class User(
+@Table(name = "profiles")
+class Profile(
 	@Id @GeneratedValue
 	var id: UUID? = null,
 	
-	@Column(unique = true) var username: String,
-	@Column(unique = true) var email: String,
-	var hashedPassword: String,
-
-	@Enumerated(EnumType.STRING) 
-	var role: Role = Role.USER,
-
+	@Column(unique = true)
+	var userId: UUID,
+	
+	var displayName: String,
+	var profileImageUrl: String = "",
 	var createdAt: LocalDateTime = LocalDateTime.now(),
 	var updatedAt: LocalDateTime = LocalDateTime.now()
-) {
-	enum class Role {
-		USER, ADMIN
-	}
-}
+)

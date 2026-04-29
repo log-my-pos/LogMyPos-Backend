@@ -10,12 +10,13 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
+import java.time.LocalDateTime
 import java.util.*
 import kotlin.collections.map
 
 @RestController
 @RequestMapping("/api/users")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("isAuthenticated()")
 class UserController(
 	private val userRepository: UserRepository,
 	private val passwordEncoder: PasswordEncoder
@@ -26,48 +27,47 @@ class UserController(
 			.map(User::toResponse)
 
 	@GetMapping
-	@PreAuthorize("isAuthenticated()")
-	fun getOwnUser(@PathVariable id: UUID): ResponseEntity<UserResponse> =
-		userRepository.findById(id)
-			.map { ResponseEntity.ok(it.toResponse()) }
-			.orElseGet { ResponseEntity.notFound().build() }
+	fun getUser(@RequestParam userId: UUID?): UserResponse {
+		val currentUser = currentAuthenticatedUser()
+		if (userId != null && currentUser.role != User.Role.ADMIN)
+			throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can update other users")
 
-	@GetMapping("/{id}")
-	fun getUser(@PathVariable id: UUID): ResponseEntity<UserResponse> =
-		userRepository.findById(id)
-			.map { ResponseEntity.ok(it.toResponse()) }
-			.orElseGet { ResponseEntity.notFound().build() }
-
-	@PatchMapping
-	@PreAuthorize("isAuthenticated()")
-	fun updateUser(@RequestBody request: UserUpdateRequest): UserResponse {
-		var user = currentAuthenticatedUser()
-		if (user.role != User.Role.ADMIN)
-			throw ResponseStatusException(HttpStatus.FORBIDDEN, "You can only update your own account")
-
-		request.id?.let { userRepository.findById(it).orElseThrow() }?.let { user = it }
-
-		val updatedUser = User(
-			id = user.id,
-			username = request.username ?: user.username,
-			email = request.email ?: user.email,
-			hashedPassword = request.password?.let(passwordEncoder::encode) ?: user.hashedPassword,
-			role = user.role
-		)
-
-		return userRepository.save(updatedUser).toResponse()
+		val id = userId ?: currentUser.id!!
+		return userRepository.findById(id)
+			.orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "User not found") }
+			.toResponse()
 	}
 
-	@DeleteMapping("/{id}")
-	fun deleteUser(@PathVariable id: UUID): ResponseEntity<Unit> =
-		userRepository.findById(id)
-			.map {
-				userRepository.delete(it)
-				ResponseEntity.noContent().build<Unit>()
-			}
-			.orElseGet { ResponseEntity.notFound().build() }
+	@PatchMapping
+	fun updateUser(@RequestParam userId: UUID?, @RequestBody request: UserUpdateRequest): UserResponse {
+		val currentUser = currentAuthenticatedUser()
+		if (userId != null && currentUser.role != User.Role.ADMIN)
+			throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can update other users")
 
-	private fun currentAuthenticatedUser(): User {
+		val id = userId ?: currentUser.id!!
+		val user = userRepository.findById(id)
+			.orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "User not found") }
+
+		request.username?.let { user.username = it }
+		request.email?.let { user.email = it }
+		request.password?.let { user.hashedPassword = passwordEncoder.encode(it)!! }
+		user.updatedAt = LocalDateTime.now()
+
+		return userRepository.save(user).toResponse()
+	}
+
+	@DeleteMapping
+	fun deleteUser(@RequestBody userId: UUID?): ResponseEntity<Unit> {
+		val currentUser = currentAuthenticatedUser()
+		if (userId != null && currentUser.role != User.Role.ADMIN)
+			throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can delete other users")
+
+		val id = userId ?: currentUser.id!!
+		userRepository.deleteById(id)
+		return ResponseEntity(HttpStatus.NO_CONTENT)
+	}
+
+	fun currentAuthenticatedUser(): User {
 		val authentication = SecurityContextHolder.getContext().authentication
 			?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "You must be logged in")
 
