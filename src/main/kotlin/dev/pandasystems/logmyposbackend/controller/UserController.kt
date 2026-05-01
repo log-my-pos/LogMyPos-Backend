@@ -3,6 +3,7 @@ package dev.pandasystems.logmyposbackend.controller
 import dev.pandasystems.logmyposbackend.dto.*
 import dev.pandasystems.logmyposbackend.model.User
 import dev.pandasystems.logmyposbackend.repositories.UserRepository
+import dev.pandasystems.logmyposbackend.service.UserService
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType
 import io.swagger.v3.oas.annotations.security.SecurityScheme
 import org.springframework.http.HttpStatus
@@ -19,35 +20,25 @@ import kotlin.collections.map
 @RestController
 @RequestMapping("/api/users")
 class UserController(
+	private val userService: UserService,
 	private val userRepository: UserRepository,
 	private val passwordEncoder: PasswordEncoder
 ) {
 	@GetMapping("/all")
+	@PreAuthorize("hasRole('ADMIN')")
 	fun getAllUsers(): List<UserResponse> =
 		userRepository.findAll()
 			.map(User::toResponse)
 
 	@GetMapping
 	fun getUser(@RequestParam userId: UUID?): UserResponse {
-		val currentUser = currentAuthenticatedUser()
-		if (userId != null && currentUser.role != User.Role.ADMIN)
-			throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can update other users")
-
-		val id = userId ?: currentUser.id!!
-		return userRepository.findById(id)
-			.orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "User not found") }
-			.toResponse()
+		val user = userService.getUserOrSelf(userId)
+		return user.toResponse()
 	}
 
 	@PatchMapping
 	fun updateUser(@RequestParam userId: UUID?, @RequestBody request: UserUpdateRequest): UserResponse {
-		val currentUser = currentAuthenticatedUser()
-		if (userId != null && currentUser.role != User.Role.ADMIN)
-			throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can update other users")
-
-		val id = userId ?: currentUser.id!!
-		val user = userRepository.findById(id)
-			.orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "User not found") }
+		val user = userService.getUserOrSelf(userId)
 
 		request.username?.let { user.username = it }
 		request.email?.let { user.email = it }
@@ -59,21 +50,13 @@ class UserController(
 
 	@DeleteMapping
 	fun deleteUser(@RequestBody userId: UUID?): ResponseEntity<Unit> {
-		val currentUser = currentAuthenticatedUser()
+		val currentUser = userService.currentAuthenticatedUser()
 		if (userId != null && currentUser.role != User.Role.ADMIN)
 			throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can delete other users")
 
 		val id = userId ?: currentUser.id!!
 		userRepository.deleteById(id)
 		return ResponseEntity(HttpStatus.NO_CONTENT)
-	}
-
-	fun currentAuthenticatedUser(): User {
-		val authentication = SecurityContextHolder.getContext().authentication
-			?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "You must be logged in")
-
-		return userRepository.findByUsernameOrEmail(authentication.name, authentication.name)
-			.orElseThrow { ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authenticated user not found") }
 	}
 }
 

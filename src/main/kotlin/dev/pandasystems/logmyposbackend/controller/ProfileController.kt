@@ -5,9 +5,9 @@ import dev.pandasystems.logmyposbackend.dto.ProfileResponse
 import dev.pandasystems.logmyposbackend.dto.ProfileUpdateRequest
 import dev.pandasystems.logmyposbackend.dto.toResponse
 import dev.pandasystems.logmyposbackend.model.Profile
-import dev.pandasystems.logmyposbackend.model.User
 import dev.pandasystems.logmyposbackend.repositories.ProfileRepository
-import dev.pandasystems.logmyposbackend.service.ProfileImageService
+import dev.pandasystems.logmyposbackend.service.BucketService
+import dev.pandasystems.logmyposbackend.service.UserService
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -28,32 +28,21 @@ import java.util.UUID
 @RequestMapping("/api/profiles")
 class ProfileController(
 	val profileRepository: ProfileRepository,
-	val userController: UserController,
-	val profileImageService: ProfileImageService
+	val userService: UserService,
+	val bucketService: BucketService
 ) {
 	@GetMapping("/user")
-	fun getProfileByUser(@RequestParam userId: UUID?): ProfileResponse {
-		val currentUser = userController.currentAuthenticatedUser()
-		val id = userId ?: currentUser.id!!
-		
-		return profileRepository.findProfileByUserId(id)
-			.orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found") }
-			.toResponse()
-	}
+	fun getProfileByUser(@RequestParam userId: UUID?): ProfileResponse = userService.getProfileOrSelf(userId).toResponse()
 
 	@PostMapping("/user")
 	fun createProfileByUser(@RequestParam userId: UUID?, @RequestBody request: ProfileCreateRequest): ProfileResponse {
-		val currentUser = userController.currentAuthenticatedUser()
-		if (userId != null && currentUser.role != User.Role.ADMIN)
-			throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can create other users' profiles")
-
-		val id = userId ?: currentUser.id!!
-		if (profileRepository.existsProfileByUserId(id))
+		val user = userService.getUserOrSelf(userId)
+		if (profileRepository.existsProfileByUserId(user.id!!))
 			throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Profile already exists for this user")
 		
 		return profileRepository.save(
 			Profile(
-				userId = id,
+				userId = user.id!!,
 				displayName = request.displayName,
 			)
 		).toResponse()
@@ -64,15 +53,9 @@ class ProfileController(
 		@RequestParam userId: UUID?,
 		@RequestParam("image") image: MultipartFile
 	): ProfileResponse {
-		val currentUser = userController.currentAuthenticatedUser()
-		if (userId != null && currentUser.role != User.Role.ADMIN)
-			throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can update other users' profiles")
-
-		val id = userId ?: currentUser.id!!
-		val profile = profileRepository.findProfileByUserId(id)
-			.orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found") }
-
-		profile.profileImageUrl = profileImageService.uploadProfileImage(id, image)
+		val profile = userService.getProfileOrSelf(userId!!)
+		
+		profile.profileImageUrl = bucketService.uploadProfileImage(profile.userId, image)
 		profile.updatedAt = LocalDateTime.now()
 
 		return profileRepository.save(profile).toResponse()
@@ -80,13 +63,7 @@ class ProfileController(
 	
 	@PatchMapping("/user")
 	fun updateProfileByUser(@RequestParam userId: UUID?, @RequestBody request: ProfileUpdateRequest): ProfileResponse {
-		val currentUser = userController.currentAuthenticatedUser()
-		if (userId != null && currentUser.role != User.Role.ADMIN)
-			throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can update other users' profiles")
-		
-		val id = userId ?: currentUser.id!!
-		val profile = profileRepository.findProfileByUserId(id)
-			.orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found") }
+		val profile = userService.getProfileOrSelf(userId!!)
 
 		request.displayName?.let { profile.displayName = it }
 		profile.updatedAt = LocalDateTime.now()
@@ -96,14 +73,8 @@ class ProfileController(
 	
 	@DeleteMapping("/user")
 	fun deleteProfileByUser(@RequestParam userId: UUID?) : ResponseEntity<Void> {
-		val currentUser = userController.currentAuthenticatedUser()
-		if (userId != null && currentUser.role != User.Role.ADMIN)
-			throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can delete other users' profiles")
-
-		val id = userId ?: currentUser.id!!
-		val profile = profileRepository.findProfileByUserId(id)
-			.orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found") }
+		val profile = userService.getProfileOrSelf(userId)
 		profileRepository.delete(profile)
-		return ResponseEntity.noContent().build()
+		return ResponseEntity(HttpStatus.NO_CONTENT)
 	}
 }

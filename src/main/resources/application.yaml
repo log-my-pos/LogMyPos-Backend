@@ -26,7 +26,6 @@ supabase:
   storage:
     endpoint-url: ${SUPABASE_S3_ENDPOINT_URL:https://kbkldkpfpccfkxhrxnwq.storage.supabase.co/storage/v1/s3}
     public-endpoint-url: ${SUPABASE_S3_ENDPOINT_URL:https://kbkldkpfpccfkxhrxnwq.storage.supabase.co/storage/v1/object/public}
-    bucket: ${SUPABASE_STORAGE_BUCKET:profile-images}
     access-key: ${SUPABASE_S3_ACCESS_KEY}
     secret-key: ${SUPABASE_S3_SECRET_KEY}
     region: ${SUPABASE_S3_REGION:eu-west-2}
