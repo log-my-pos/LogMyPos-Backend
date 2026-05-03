@@ -7,6 +7,12 @@ public class User {
 	public required string Username { get; set; }
 	[EmailAddress] public required string Email { get; set; }
 	public required string HashedPassword { get; set; }
+	public UserRole Role { get; set; } = UserRole.User;
 	public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
 	public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+	
+	public enum UserRole {
+		User,
+		Admin
+	}
 }

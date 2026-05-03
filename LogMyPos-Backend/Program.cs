@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using System.Security.Claims;
 using System.Text;
 
 var webAppOptions = new WebApplicationOptions {
@@ -53,6 +54,7 @@ builder.Services.AddAuthentication(options => {
 			ValidIssuer = jwtIssuer,
 			ValidAudience = jwtAudience,
 			IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+			RoleClaimType = ClaimTypes.Role,
 			ClockSkew = TimeSpan.Zero
 		};
 	});
@@ -86,8 +88,3 @@ app.MapControllers();
 
 app.Run();
 
-static OpenApiSecuritySchemeReference CreateSecuritySchemeReference() {
-	OpenApiDocument? hostDocument = null;
-	string? externalResource = null;
-	return new OpenApiSecuritySchemeReference(JwtBearerDefaults.AuthenticationScheme, hostDocument, externalResource);
-}

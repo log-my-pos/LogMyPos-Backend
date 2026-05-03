@@ -18,6 +18,7 @@ namespace LogMyPos_Backend.Controllers;
 [Authorize]
 public class UserController(AppDbContext dbContext, IPasswordHasher<User> passwordHasher, IConfiguration configuration) : ControllerBase {
 	[HttpGet]
+	[Authorize(Roles = "Admin")]
 	public async Task<ActionResult<IEnumerable<UserResponse>>> GetUsers() {
 		var users = await dbContext.Users.ToListAsync();
 		return Ok(users.Select(ToUserResponse));
@@ -51,6 +52,7 @@ public class UserController(AppDbContext dbContext, IPasswordHasher<User> passwo
 	}
 	
 	[HttpDelete]
+	[Authorize(Roles = "Admin")]
 	public async Task<ActionResult> DeleteUser(Guid id) {
 		var user = await dbContext.Users.FirstOrDefaultAsync(user => user.Id == id);
 
@@ -97,6 +99,7 @@ public class UserController(AppDbContext dbContext, IPasswordHasher<User> passwo
 			Id = user.Id,
 			Username = user.Username,
 			Email = user.Email,
+			Role = user.Role,
 			CreatedAt = user.CreatedAt,
 			UpdatedAt = user.UpdatedAt
 		};
@@ -116,6 +119,8 @@ public class UserController(AppDbContext dbContext, IPasswordHasher<User> passwo
 			new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
 			new(JwtRegisteredClaimNames.UniqueName, user.Username),
 			new(JwtRegisteredClaimNames.Email, user.Email),
+			new(ClaimTypes.Role, user.Role.ToString()),
+			new("role", user.Role.ToString()),
 			new(ClaimTypes.NameIdentifier, user.Id.ToString()),
 			new(ClaimTypes.Name, user.Username),
 			new(ClaimTypes.Email, user.Email)
