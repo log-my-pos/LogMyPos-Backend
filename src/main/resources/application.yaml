@@ -14,7 +14,6 @@ spring:
 
 jwt:
   secret: ${JWT_SECRET}
-  expiration-ms: 3600000
 
 springdoc:
   api-docs:
