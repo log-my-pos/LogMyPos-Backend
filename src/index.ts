@@ -37,4 +37,11 @@ const app = new Elysia()
     }),
   );
 
+if (Bun.main === Bun.file(import.meta.path).name) {
+  app.listen(3000);
+  console.log(
+    `🦊 Elysia is running locally at http://${app.server?.hostname}:${app.server?.port}`,
+  );
+}
+
 export default app;
