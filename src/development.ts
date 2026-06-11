@@ -11,6 +11,10 @@ const app = new Elysia()
         tags: [{ name: "Auth", description: "Authentication endpoints" }],
       },
     }),
-  );
+  )
 
-export default app;
+  .listen(3000);
+
+console.log(
+  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
+);
