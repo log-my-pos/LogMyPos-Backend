@@ -44,10 +44,12 @@ const app = new Elysia()
     }),
   );
 
-if (Bun.main === Bun.file(import.meta.path).name) {
+if (import.meta.main) {
+  const port = Number(process.env.PORT) || 3000;
+
   app.listen({
+    port,
     hostname: "0.0.0.0",
-    port: 3000,
   });
   console.log(
     `🦊 Elysia is running locally at http://${app.server?.hostname}:${app.server?.port}`,
