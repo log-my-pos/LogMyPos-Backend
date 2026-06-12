@@ -47,10 +47,9 @@ export const authRoutes = new Elysia({
       }
 
       const token = await jwt.sign({
-        id: data.id,
-        username: data.username,
-        email: data.email,
-        role: data.role,
+        sub: data.id,
+        name: data.username,
+        scope: data.role,
       });
 
       set.status = 201;
@@ -140,9 +139,9 @@ export const authRoutes = new Elysia({
       }
 
       const token = await jwt.sign({
-        id: user.id,
-        email: user.email,
-        role: user.role,
+        sub: user.id,
+        name: user.username,
+        scope: user.role,
       });
 
       return {

@@ -28,11 +28,18 @@ const app = new Elysia()
             description: "Local Development Server",
           },
           {
+            url: "https://lmp-backend.fly.dev",
+            description: "Online Development Server",
+          },
+          {
             url: "https://log-my-pos-backend.vercel.app",
             description: "Production Server",
           },
         ],
-        tags: [{ name: "Auth", description: "Authentication endpoints" }],
+        tags: [
+          { name: "Auth", description: "Authentication endpoints" },
+          { name: "Locations", description: "Location management endpoints" },
+        ],
       },
     }),
   );
