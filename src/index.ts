@@ -28,7 +28,7 @@ const app = new Elysia()
             description: "Local Development Server",
           },
           {
-            url: "https://lmp-backend.fly.dev",
+            url: "https://logmypos-backend.coolify.pandasystems.dev",
             description: "Online Development Server",
           },
           {
