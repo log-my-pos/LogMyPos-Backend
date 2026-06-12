@@ -2,13 +2,10 @@ FROM oven/bun:1.2-slim
 
 WORKDIR /app
 
-COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile --production
-
-COPY tsconfig.json ./
-COPY src ./src
-
 ENV NODE_ENV=production
+
+COPY . .
+RUN bun install --frozen-lockfile --production
 
 EXPOSE 3000
 
