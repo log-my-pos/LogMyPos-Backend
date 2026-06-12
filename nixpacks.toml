@@ -1,18 +1,14 @@
 # nixpacks.toml
 
-# 1. SETUP PHASE: Define the underlying operating system utilities
 [phases.setup]
-nixPkgs = ["...", "ffmpeg", "wget"] # "..." tells Nixpacks to keep its auto-detected language tools (like Bun)
-aptPkgs = ["git"]                   # If a package isn't in Nix, install it via traditional Ubuntu apt-get
-
-# 2. INSTALL PHASE: Fetch code dependencies 
+nixPkgs = ["bun", "nodejs_25", "ffmpeg", "wget"]
+aptPkgs = ["git"]
+ 
 [phases.install]
 cmds = ["bun install --frozen-lockfile"]
 
-# 3. BUILD PHASE: Compile code or assets (if required)
 [phases.build]
 cmds = ["echo 'Building assets...'"]
 
-# 4. START PHASE: Define the runtime behavior
 [start]
-cmd = "bun run src/index.ts" # Overrides the default start command discovered in package.json
+cmd = "bun run src/index.ts"
