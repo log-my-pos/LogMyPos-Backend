@@ -1,12 +1,16 @@
 import { Elysia } from "elysia";
-import { authRoutes } from "./routes/auth";
 import openapi from "@elysia/openapi";
 import cors from "@elysiajs/cors";
+import { authRoutes } from "./routes/auth";
+import { locationRoutes } from "./routes/locations";
+import { userRoutes } from "./routes/users";
 
 const app = new Elysia()
   .use(cors())
 
-  .group("/api", (api) => api.use(authRoutes))
+  .group("/api", (api) =>
+    api.use(authRoutes).use(userRoutes).use(locationRoutes).use(userRoutes),
+  )
 
   .use(
     openapi({
@@ -38,8 +42,20 @@ const app = new Elysia()
         ],
         tags: [
           { name: "Auth", description: "Authentication endpoints" },
+          { name: "Users", description: "User management endpoints" },
           { name: "Locations", description: "Location management endpoints" },
         ],
+        components: {
+          securitySchemes: {
+            bearerAuth: {
+              type: "http",
+              scheme: "bearer",
+              bearerFormat: "JWT",
+              description:
+                "Enter your JWT token to access protected endpoints.",
+            },
+          },
+        },
       },
     }),
   );
