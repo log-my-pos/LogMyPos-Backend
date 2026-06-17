@@ -24,7 +24,7 @@ const app = new Elysia()
         info: {
           title: "LMP Backend API",
           description: "API documentation for the LMP Backend",
-          version: "0.1.4",
+          version: "0.2.1",
         },
         servers: [
           {
@@ -33,10 +33,6 @@ const app = new Elysia()
           },
           {
             url: "https://logmypos-backend.coolify.pandasystems.dev",
-            description: "Online Development Server",
-          },
-          {
-            url: "https://log-my-pos-backend.vercel.app",
             description: "Production Server",
           },
         ],
