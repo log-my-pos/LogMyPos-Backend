@@ -46,8 +46,8 @@ export const locationRoutes = new Elysia({
       },
     },
     (app) =>
-      // ------------------- CREATE LOCATION ------------------ //
       app
+        // ------------------- CREATE LOCATION ------------------ //
         .post(
           "/",
           async ({ query, body, user, set }) => {
@@ -172,88 +172,6 @@ export const locationRoutes = new Elysia({
           },
         )
 
-        // -------------------- GET LOCATION -------------------- //
-        .get(
-          "/:id",
-          async ({ params, user, set }) => {
-            if (!user) {
-              set.status = 401;
-              return { error: "Unauthorized: Invalid or missing token" };
-            }
-
-            const { data, error } = await supabase
-              .from("location_marks")
-              .select()
-              .eq("id", params.id)
-              .single();
-
-            if (error) {
-              set.status = 400;
-              return {
-                error: error.message || "Failed to retrieve location mark",
-              };
-            }
-
-            if (user.role !== "admin" && data.user_id !== user.id) {
-              set.status = 403;
-              return {
-                error:
-                  "Forbidden: You do not have permission to view this location mark",
-              };
-            }
-
-            return {
-              message: "Location mark retrieved successfully",
-              data,
-            };
-          },
-          {
-            params: t.Object({
-              id: t.String({
-                format: "uuid",
-                description:
-                  "The unique UUID of the location mark to retrieve.",
-              }),
-            }),
-            detail: {
-              summary: "Retrieve a specific location mark",
-              description:
-                "Fetches a single location mark. Users can only view their own marks unless they have admin privileges.",
-              tags: ["Locations"],
-              responses: {
-                200: { description: "Location mark successfully retrieved." },
-                400: { description: "Failed to retrieve the location mark." },
-                401: {
-                  description:
-                    "Authorisation failed due to an invalid or missing bearer token.",
-                },
-                403: {
-                  description:
-                    "Forbidden. You do not have permission to view this resource.",
-                },
-              },
-            },
-            response: {
-              200: t.Object({
-                message: t.String(),
-                data: t.Object({
-                  id: t.String({ format: "uuid" }),
-                  title: t.String(),
-                  description: t.Nullable(t.String()),
-                  latitude: t.Number(),
-                  longitude: t.Number(),
-                  user_id: t.String({ format: "uuid" }),
-                  created_at: t.Optional(t.String()),
-                  updated_at: t.Optional(t.String()),
-                }),
-              }),
-              400: t.Object({ error: t.String() }),
-              401: t.Object({ error: t.String() }),
-              403: t.Object({ error: t.String() }),
-            },
-          },
-        )
-
         // ------------------ GET ALL LOCATIONS ----------------- //
         .get(
           "/",
@@ -338,6 +256,88 @@ export const locationRoutes = new Elysia({
                     updated_at: t.Optional(t.String()),
                   }),
                 ),
+              }),
+              400: t.Object({ error: t.String() }),
+              401: t.Object({ error: t.String() }),
+              403: t.Object({ error: t.String() }),
+            },
+          },
+        )
+
+        // -------------------- GET LOCATION -------------------- //
+        .get(
+          "/:id",
+          async ({ params, user, set }) => {
+            if (!user) {
+              set.status = 401;
+              return { error: "Unauthorized: Invalid or missing token" };
+            }
+
+            const { data, error } = await supabase
+              .from("location_marks")
+              .select()
+              .eq("id", params.id)
+              .single();
+
+            if (error) {
+              set.status = 400;
+              return {
+                error: error.message || "Failed to retrieve location mark",
+              };
+            }
+
+            if (user.role !== "admin" && data.user_id !== user.id) {
+              set.status = 403;
+              return {
+                error:
+                  "Forbidden: You do not have permission to view this location mark",
+              };
+            }
+
+            return {
+              message: "Location mark retrieved successfully",
+              data,
+            };
+          },
+          {
+            params: t.Object({
+              id: t.String({
+                format: "uuid",
+                description:
+                  "The unique UUID of the location mark to retrieve.",
+              }),
+            }),
+            detail: {
+              summary: "Retrieve a specific location mark",
+              description:
+                "Fetches a single location mark. Users can only view their own marks unless they have admin privileges.",
+              tags: ["Locations"],
+              responses: {
+                200: { description: "Location mark successfully retrieved." },
+                400: { description: "Failed to retrieve the location mark." },
+                401: {
+                  description:
+                    "Authorisation failed due to an invalid or missing bearer token.",
+                },
+                403: {
+                  description:
+                    "Forbidden. You do not have permission to view this resource.",
+                },
+              },
+            },
+            response: {
+              200: t.Object({
+                message: t.String(),
+                data: t.Object({
+                  id: t.String({ format: "uuid" }),
+                  title: t.String(),
+                  description: t.Nullable(t.String()),
+                  latitude: t.Number(),
+                  longitude: t.Number(),
+                  user_id: t.String({ format: "uuid" }),
+                  created_at: t.Optional(t.String()),
+                  updated_at: t.Optional(t.String()),
+                }),
               }),
               400: t.Object({ error: t.String() }),
               401: t.Object({ error: t.String() }),

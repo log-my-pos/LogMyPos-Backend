@@ -28,13 +28,16 @@ export const authRoutes = new Elysia({
         username: string;
       };
 
+      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedUsername = username.trim().toLowerCase();
+
       const hashedPassword = await Bun.password.hash(password);
 
       const { data, error } = await supabase
         .from("users")
         .insert({
-          email,
-          username,
+          email: normalizedEmail,
+          username: normalizedUsername,
           role: "user",
           hashed_password: hashedPassword,
         })
@@ -116,11 +119,12 @@ export const authRoutes = new Elysia({
     "/login",
     async ({ body, jwt, set }) => {
       const { identifier, password } = body;
+      const normalizedIdentifier = identifier.trim().toLowerCase();
 
       const { data: user, error } = await supabase
         .from("users")
         .select("id, email, hashed_password, role, username")
-        .or(`email.eq.${identifier},username.eq.${identifier}`)
+        .or(`email.eq.${normalizedIdentifier},username.eq.${normalizedIdentifier}`)
         .maybeSingle();
 
       if (error || !user) {
