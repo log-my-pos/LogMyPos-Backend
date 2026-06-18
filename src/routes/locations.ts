@@ -677,6 +677,7 @@ export const locationRoutes = new Elysia({
               description:
                 "Uploads binary assets directly to Supabase storage buckets and appends meta-records to the location image index table. Non-admin profiles must own the targeted location mark.",
               tags: ["Locations"],
+              security: [{ bearerAuth: [] }],
               responses: {
                 200: {
                   description: "Images successfully processed and mapped.",
@@ -791,6 +792,7 @@ export const locationRoutes = new Elysia({
               description:
                 "Fetches metadata objects and secure public links of images grouped inside a specified location entry record. Requires explicit resource mapping permissions.",
               tags: ["Locations"],
+              security: [{ bearerAuth: [] }],
               responses: {
                 200: {
                   description: "Image collection dataset queried successfully.",
@@ -936,6 +938,7 @@ export const locationRoutes = new Elysia({
               description:
                 "Permanently purges a specific image asset from the object storage bucket and its tracking meta-row out of the database index. Standard accounts must own the associated location mark to execute this execution path.",
               tags: ["Locations"],
+              security: [{ bearerAuth: [] }],
               responses: {
                 200: {
                   description:

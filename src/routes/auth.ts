@@ -84,6 +84,7 @@ export const authRoutes = new Elysia({
         description:
           "Creates a new user profile in the database with a hashed password, assigns the default `user` role, and generates an initial 7-day JWT authentication token.",
         tags: ["Auth"],
+        security: [],
         responses: {
           201: {
             description:
@@ -178,6 +179,7 @@ export const authRoutes = new Elysia({
         description:
           "Allows a user to log in using either their **email** or **username**. Returns a 7-day JWT token upon success.",
         tags: ["Auth"],
+        security: [],
         responses: {
           200: {
             description:
