@@ -128,6 +128,7 @@ export const locationRoutes = new Elysia({
               description:
                 "Creates a new location mark entry in the database. If the authenticated user has an `admin` role, they can override the target assignment using the query parameters. Standard accounts will always default to their own record ID.",
               tags: ["Locations"],
+              security: [{ bearerAuth: [] }],
               responses: {
                 201: {
                   description:
@@ -231,6 +232,7 @@ export const locationRoutes = new Elysia({
               description:
                 "Fetches an array of all location marks belonging to the authenticated user. Admins can provide a user ID in the query to fetch that specific user's marks.",
               tags: ["Locations"],
+              security: [{ bearerAuth: [] }],
               responses: {
                 200: { description: "Location marks successfully retrieved." },
                 400: { description: "Failed to retrieve the location marks." },
@@ -315,6 +317,7 @@ export const locationRoutes = new Elysia({
               description:
                 "Fetches a single location mark. Users can only view their own marks unless they have admin privileges.",
               tags: ["Locations"],
+              security: [{ bearerAuth: [] }],
               responses: {
                 200: { description: "Location mark successfully retrieved." },
                 400: { description: "Failed to retrieve the location mark." },
@@ -442,6 +445,7 @@ export const locationRoutes = new Elysia({
               description:
                 "Updates specific fields on an existing location mark. Users can only modify their own marks unless they are an admin.",
               tags: ["Locations"],
+              security: [{ bearerAuth: [] }],
               responses: {
                 200: { description: "Location mark successfully updated." },
                 400: {
@@ -535,6 +539,7 @@ export const locationRoutes = new Elysia({
               description:
                 "Permanently removes a location mark. Users can only delete their own marks unless they hold admin privileges.",
               tags: ["Locations"],
+              security: [{ bearerAuth: [] }],
               responses: {
                 200: { description: "Location mark successfully deleted." },
                 400: { description: "Deletion failed." },
