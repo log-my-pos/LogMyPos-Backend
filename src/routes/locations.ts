@@ -56,7 +56,8 @@ export const locationRoutes = new Elysia({
               return { error: "Unauthorized" };
             }
 
-            const { title, description, latitude, longitude } = body;
+            const { title, description, latitude, longitude, created_at } =
+              body;
 
             const targetUserId =
               user.role === "admin" && query.id ? query.id : user.id;
@@ -68,6 +69,7 @@ export const locationRoutes = new Elysia({
                 description,
                 latitude,
                 longitude,
+                created_at,
                 user_id: targetUserId,
               })
               .select()
@@ -109,6 +111,7 @@ export const locationRoutes = new Elysia({
                 description: "The geographical longitude coordinate.",
                 default: -0.1278,
               }),
+              created_at: t.Optional(t.Nullable(t.String({}))),
             }),
             query: t.Object({
               id: t.Optional(
@@ -549,6 +552,425 @@ export const locationRoutes = new Elysia({
               400: t.Object({ error: t.String() }),
               401: t.Object({ error: t.String() }),
               403: t.Object({ error: t.String() }),
+            },
+          },
+        )
+
+        // -------------------- UPLOAD IMAGE -------------------- //
+        .post(
+          "/image/:id",
+          async ({ params, body, user, set }) => {
+            if (!user) {
+              set.status = 401;
+              return {
+                success: false,
+                message: "Unauthorized: Missing user token",
+              };
+            }
+
+            const { data: existingRecord, error: fetchError } = await supabase
+              .from("location_marks")
+              .select("user_id")
+              .eq("id", params.id)
+              .single();
+
+            if (fetchError) {
+              set.status = 400;
+              return {
+                success: false,
+                message:
+                  fetchError.message ||
+                  "Failed to locate location mark record for image upload",
+              };
+            }
+
+            if (user.role !== "admin" && existingRecord.user_id !== user.id) {
+              set.status = 403;
+              return {
+                success: false,
+                message:
+                  "Forbidden: You do not have permission to upload images for this location mark",
+              };
+            }
+
+            const files = Array.isArray(body.images)
+              ? body.images
+              : [body.images];
+            const uploadResults = [];
+
+            for (const file of files) {
+              if (!file.type.startsWith("image/")) {
+                set.status = 400;
+                return {
+                  success: false,
+                  message: `File ${file.name} is not a valid image type.`,
+                };
+              }
+
+              const uniqueFileName = `${crypto.randomUUID()}-${file.name}`;
+              const bucketPath = `uploads/${params.id}/${uniqueFileName}`;
+
+              const { data: storageData, error: storageError } =
+                await supabase.storage.from("images").upload(bucketPath, file, {
+                  contentType: file.type,
+                  upsert: false,
+                });
+
+              if (storageError) {
+                set.status = 500;
+                return {
+                  success: false,
+                  message: `Failed to upload ${file.name} to storage.`,
+                  error: storageError.message,
+                };
+              }
+
+              const {
+                data: { publicUrl },
+              } = supabase.storage.from("images").getPublicUrl(bucketPath);
+
+              const { error: dbError } = await supabase
+                .from("location_images")
+                .insert({
+                  location_mark_id: params.id,
+                  url: publicUrl,
+                  path: bucketPath,
+                });
+
+              if (dbError) {
+                set.status = 500;
+                return {
+                  success: false,
+                  message: `Failed to save ${file.name} to database.`,
+                  error: dbError.message,
+                };
+              }
+
+              uploadResults.push({
+                originalName: file.name,
+                storagePath: storageData.path,
+                publicUrl: publicUrl,
+              });
+            }
+
+            return {
+              success: true,
+              message: `${files.length} images successfully uploaded and recorded.`,
+              files: uploadResults,
+            };
+          },
+          {
+            params: t.Object({
+              id: t.String({
+                format: "uuid",
+                description: "The unique UUID of the target location mark.",
+              }),
+            }),
+            body: t.Object({
+              images: t.Files({
+                type: "image",
+                description: "Image file binary array data to upload.",
+              }),
+            }),
+            detail: {
+              summary: "Upload images to a location mark",
+              description:
+                "Uploads binary assets directly to Supabase storage buckets and appends meta-records to the location image index table. Non-admin profiles must own the targeted location mark.",
+              tags: ["Locations"],
+              responses: {
+                200: {
+                  description: "Images successfully processed and mapped.",
+                },
+                400: {
+                  description:
+                    "Bad Request. Invalid file formatting, or target record missing.",
+                },
+                401: {
+                  description: "Authorisation missing or completely expired.",
+                },
+                403: {
+                  description:
+                    "Forbidden. Insufficient profile clearance to modify target parent mark elements.",
+                },
+                500: {
+                  description:
+                    "Internal storage subsystem error or pipeline handling failures.",
+                },
+              },
+            },
+            response: {
+              200: t.Object({
+                success: t.Boolean(),
+                message: t.String(),
+                files: t.Array(
+                  t.Object({
+                    originalName: t.String(),
+                    storagePath: t.String(),
+                    publicUrl: t.String(),
+                  }),
+                ),
+              }),
+              400: t.Object({ success: t.Boolean(), message: t.String() }),
+              401: t.Object({ error: t.String() }),
+              403: t.Object({ success: t.Boolean(), message: t.String() }),
+              500: t.Object({
+                success: t.Boolean(),
+                message: t.String(),
+                error: t.Optional(t.String()),
+              }),
+            },
+          },
+        )
+
+        // -------------------- GET IMAGES -------------------- //
+        .get(
+          "/image/:id",
+          async ({ params, user, set }) => {
+            if (!user) {
+              set.status = 401;
+              return {
+                success: false,
+                message: "Unauthorized: Missing user token",
+              };
+            }
+
+            const { data: existingRecord, error: fetchError } = await supabase
+              .from("location_marks")
+              .select("user_id")
+              .eq("id", params.id)
+              .single();
+
+            if (fetchError) {
+              set.status = 400;
+              return {
+                success: false,
+                message:
+                  fetchError.message ||
+                  "Failed to locate parent location mark record for image retrieval",
+              };
+            }
+
+            if (user.role !== "admin" && existingRecord.user_id !== user.id) {
+              set.status = 403;
+              return {
+                success: false,
+                message:
+                  "Forbidden: You do not have permission to view images for this location mark",
+              };
+            }
+
+            const { data: images, error: dbError } = await supabase
+              .from("location_images")
+              .select("id, url, path, created_at")
+              .eq("location_mark_id", params.id);
+
+            if (dbError) {
+              set.status = 500;
+              return {
+                success: false,
+                message: `Failed to retrieve images for ID ${params.id}.`,
+                error: dbError.message,
+              };
+            }
+
+            return {
+              success: true,
+              message: `Successfully retrieved ${images.length} image(s).`,
+              images: images,
+            };
+          },
+          {
+            params: t.Object({
+              id: t.String({
+                format: "uuid",
+                description: "The unique UUID of the target location mark.",
+              }),
+            }),
+            detail: {
+              summary: "Retrieve images for a location mark",
+              description:
+                "Fetches metadata objects and secure public links of images grouped inside a specified location entry record. Requires explicit resource mapping permissions.",
+              tags: ["Locations"],
+              responses: {
+                200: {
+                  description: "Image collection dataset queried successfully.",
+                },
+                400: {
+                  description:
+                    "Invalid UUID string construction format or source data error.",
+                },
+                401: {
+                  description: "Authorisation missing or fully rejected.",
+                },
+                403: {
+                  description:
+                    "Forbidden. Profiling constraints block access to requested parent target asset indexes.",
+                },
+                500: { description: "Database engine query processing fault." },
+              },
+            },
+            response: {
+              200: t.Object({
+                success: t.Boolean(),
+                message: t.String(),
+                images: t.Array(
+                  t.Object({
+                    id: t.Any(),
+                    url: t.String(),
+                    path: t.String({
+                      description:
+                        "The distinct bucket storage relative file path pathing pointer.",
+                    }),
+                    created_at: t.Optional(t.Any()),
+                  }),
+                ),
+              }),
+              400: t.Object({ success: t.Boolean(), message: t.String() }),
+              401: t.Object({ error: t.String() }),
+              403: t.Object({ success: t.Boolean(), message: t.String() }),
+              500: t.Object({
+                success: t.Boolean(),
+                message: t.String(),
+                error: t.Optional(t.String()),
+              }),
+            },
+          },
+        )
+
+        // -------------------- DELETE IMAGE -------------------- //
+        .delete(
+          "/image/:id",
+          async ({ params, user, set }) => {
+            if (!user) {
+              set.status = 401;
+              return {
+                success: false,
+                message: "Unauthorized: Missing user token",
+              };
+            }
+
+            const { data: imageRecord, error: imageError } = await supabase
+              .from("location_images")
+              .select("id, location_mark_id, path")
+              .eq("id", params.id)
+              .single();
+
+            if (imageError || !imageRecord) {
+              set.status = 400;
+              return {
+                success: false,
+                message: imageError?.message || "Failed to locate image record",
+              };
+            }
+
+            const { data: locationRecord, error: locationError } =
+              await supabase
+                .from("location_marks")
+                .select("user_id")
+                .eq("id", imageRecord.location_mark_id)
+                .single();
+
+            if (locationError || !locationRecord) {
+              set.status = 400;
+              return {
+                success: false,
+                message:
+                  locationError?.message ||
+                  "Failed to verify parent location ownership for this image",
+              };
+            }
+
+            if (user.role !== "admin" && locationRecord.user_id !== user.id) {
+              set.status = 403;
+              return {
+                success: false,
+                message:
+                  "Forbidden: You do not have permission to delete this image",
+              };
+            }
+
+            if (imageRecord.path) {
+              const { error: storageError } = await supabase.storage
+                .from("images")
+                .remove([imageRecord.path]);
+
+              if (storageError) {
+                set.status = 500;
+                return {
+                  success: false,
+                  message: "Failed to remove asset file from storage bucket",
+                  error: storageError.message,
+                };
+              }
+            }
+
+            const { error: dbDeleteError } = await supabase
+              .from("location_images")
+              .delete()
+              .eq("id", params.id);
+
+            if (dbDeleteError) {
+              set.status = 500;
+              return {
+                success: false,
+                message:
+                  "Failed to delete image record entry from database index",
+                error: dbDeleteError.message,
+              };
+            }
+
+            return {
+              success: true,
+              message: "Image asset and database record successfully deleted",
+            };
+          },
+          {
+            params: t.Object({
+              id: t.String({
+                description:
+                  "The unique UUID of the specific database image index row to remove.",
+              }),
+            }),
+            detail: {
+              summary: "Delete a specific location image",
+              description:
+                "Permanently purges a specific image asset from the object storage bucket and its tracking meta-row out of the database index. Standard accounts must own the associated location mark to execute this execution path.",
+              tags: ["Locations"],
+              responses: {
+                200: {
+                  description:
+                    "Image file and link table index elements successfully cleared.",
+                },
+                400: {
+                  description:
+                    "Bad Request. Target file or parent validation components not found.",
+                },
+                401: {
+                  description: "Authorisation missing or fully rejected.",
+                },
+                403: {
+                  description:
+                    "Forbidden. Profiling constraints block deletion access on target asset indexes.",
+                },
+                500: {
+                  description:
+                    "Storage cluster file unlink error or engine database fault.",
+                },
+              },
+            },
+            response: {
+              200: t.Object({
+                success: t.Boolean(),
+                message: t.String(),
+              }),
+              400: t.Object({ success: t.Boolean(), message: t.String() }),
+              401: t.Object({ error: t.String() }),
+              403: t.Object({ success: t.Boolean(), message: t.String() }),
+              500: t.Object({
+                success: t.Boolean(),
+                message: t.String(),
+                error: t.Optional(t.String()),
+              }),
             },
           },
         ),

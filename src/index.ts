@@ -24,7 +24,7 @@ const app = new Elysia()
         info: {
           title: "LMP Backend API",
           description: "API documentation for the LMP Backend",
-          version: "0.2.1",
+          version: "0.4.8",
         },
         servers: [
           {
