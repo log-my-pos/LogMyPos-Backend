@@ -125,7 +125,9 @@ export const authRoutes = new Elysia({
       const { data: user, error } = await supabase
         .from("users")
         .select("id, email, hashed_password, role, username")
-        .or(`email.eq.${normalizedIdentifier},username.eq.${normalizedIdentifier}`)
+        .or(
+          `email.eq.${normalizedIdentifier},username.eq.${normalizedIdentifier}`,
+        )
         .maybeSingle();
 
       if (error || !user) {
@@ -199,6 +201,69 @@ export const authRoutes = new Elysia({
           user: t.Object({
             id: t.String({ format: "uuid" }),
             email: t.String(),
+            username: t.String(),
+            role: t.String(),
+          }),
+        }),
+        401: t.Object({
+          error: t.String(),
+        }),
+      },
+    },
+  )
+  // ----------------------- VERIFY ----------------------- //
+  .post(
+    "/verify",
+    async ({ body, jwt, set }) => {
+      const { token } = body;
+
+      const payload = await jwt.verify(token);
+
+      if (!payload) {
+        set.status = 401;
+        return { error: "Token signature is invalid or token has expired" };
+      }
+
+      return {
+        valid: true,
+        message: "Token verification status: Active",
+        user: {
+          id: payload.sub as string,
+          username: payload.name as string,
+          role: payload.scope as string,
+        },
+      };
+    },
+    {
+      body: t.Object({
+        token: t.String({
+          description: "The active authentication JWT string to challenge.",
+        }),
+      }),
+
+      detail: {
+        summary: "Verify authentication token status",
+        description:
+          "Validates structural alignment, expiration rules, and cryptographic authenticity of a token string without risking runtime private variable leakage to target client targets.",
+        tags: ["Auth"],
+        security: [],
+        responses: {
+          200: {
+            description: "Token asserted successfully and validation passed.",
+          },
+          401: {
+            description:
+              "Authentication processing failed. Token parameters are out-of-bounds or compromised.",
+          },
+        },
+      },
+
+      response: {
+        200: t.Object({
+          valid: t.Boolean(),
+          message: t.String(),
+          user: t.Object({
+            id: t.String(),
             username: t.String(),
             role: t.String(),
           }),
