@@ -459,14 +459,20 @@ export const locationRoutes = new Elysia({
               };
             }
 
+            const updatePayload: any = {
+              title: body.title,
+              description: body.description,
+              latitude: body.latitude,
+              longitude: body.longitude,
+            };
+
+            if (body.user_id && user.role === "admin") {
+              updatePayload.user_id = body.user_id;
+            }
+
             const { error, data } = await supabase
               .from("location_marks")
-              .update({
-                title: body.title,
-                description: body.description,
-                latitude: body.latitude,
-                longitude: body.longitude,
-              })
+              .update(updatePayload)
               .eq("id", params.id)
               .select()
               .single();
@@ -515,6 +521,7 @@ export const locationRoutes = new Elysia({
                   description: "The updated longitude coordinate.",
                 }),
               ),
+              user_id: t.Optional(t.String({ format: "uuid" })),
             }),
             detail: {
               summary: "Update an existing location mark",
