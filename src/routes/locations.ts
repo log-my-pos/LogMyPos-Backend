@@ -269,6 +269,82 @@ export const locationRoutes = new Elysia({
           },
         )
 
+        // ----------- GET EVERY LOCATION (ADMIN ONLY) ---------- //
+        .get(
+          "/all",
+          async ({ user, set }) => {
+            if (!user) {
+              set.status = 401;
+              return { error: "Unauthorized: Invalid or missing token" };
+            }
+
+            if (user.role !== "admin") {
+              set.status = 403;
+              return {
+                error:
+                  "Forbidden: Only administrators can access global locations.",
+              };
+            }
+
+            const { data, error } = await supabase
+              .from("location_marks")
+              .select()
+              .order("created_at", { ascending: false });
+
+            if (error) {
+              set.status = 500;
+              return {
+                error: error.message || "Failed to retrieve all location marks",
+              };
+            }
+
+            return {
+              message: "All global location marks retrieved successfully",
+              data,
+            };
+          },
+          {
+            detail: {
+              summary: "Retrieve ALL location marks globally (Admin Only)",
+              description:
+                "Fetches an array of every location mark across all users in the database.",
+              tags: ["Locations"],
+              security: [{ bearerAuth: [] }],
+              responses: {
+                200: { description: "Location marks successfully retrieved." },
+                401: {
+                  description:
+                    "Authorisation failed due to an invalid or missing bearer token.",
+                },
+                403: {
+                  description: "Forbidden. Standard accounts are restricted.",
+                },
+                500: { description: "Database engine query processing fault." },
+              },
+            },
+            response: {
+              200: t.Object({
+                message: t.String(),
+                data: t.Array(
+                  t.Object({
+                    id: t.String({ format: "uuid" }),
+                    title: t.String(),
+                    description: t.Nullable(t.String()),
+                    latitude: t.Number(),
+                    longitude: t.Number(),
+                    user_id: t.String({ format: "uuid" }),
+                    created_at: t.Optional(t.String()),
+                    updated_at: t.Optional(t.String()),
+                  }),
+                ),
+              }),
+              401: t.Object({ error: t.String() }),
+              403: t.Object({ error: t.String() }),
+              500: t.Object({ error: t.String() }),
+            },
+          },
+        )
+
         // -------------------- GET LOCATION -------------------- //
         .get(
           "/:id",
